@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Free SLA uptime calculator. Calculate allowed downtime for different SLA percentages. 99%, 99.9%, 99.99%, 99.999% uptime calculator.">
+    <title>SLA Uptime Calculator | Downtime Calculator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #48bb78;
+            --warning: #f6ad55;
+            --danger: #fc8181;
+            --dark: #1a202c;
+            --light: #f7fafc;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--light);
+            color: var(--dark);
+        }
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 50px 20px;
+            text-align: center;
+        }
+        header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+        .calculator { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); margin-bottom: 40px; }
+        .input-group { margin-bottom: 30px; }
+        label { display: block; font-weight: 600; margin-bottom: 10px; color: var(--dark); }
+        input { width: 100%; padding: 15px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1.1rem; }
+        input:focus { outline: none; border-color: var(--primary); }
+        .sla-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; margin: 20px 0; }
+        .sla-btn { padding: 15px; border: 2px solid var(--primary); background: white; color: var(--primary); border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
+        .sla-btn:hover, .sla-btn.active { background: var(--primary); color: white; }
+        .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .result-card { background: linear-gradient(135deg, var(--success) 0%, #38a169 100%); color: white; padding: 30px; border-radius: 15px; text-align: center; }
+        .result-value { font-size: 2.5rem; font-weight: 800; margin-bottom: 10px; }
+        .result-label { font-size: 1rem; opacity: 0.9; }
+        .comparison-table { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.1); margin-top: 40px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        .nines { color: var(--success); font-weight: 700; }
+        .downtime-bad { color: var(--danger); }
+        footer { background: var(--dark); color: white; text-align: center; padding: 30px 20px; margin-top: 60px; }
+        @media (max-width: 768px) {
+            header h1 { font-size: 2rem; }
+            .result-value { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>⏱️ SLA Uptime Calculator</h1>
+        <p>Calculate allowed downtime for different SLA percentages</p>
+    </header>
+
+    <div class="container">
+        <div class="calculator">
+            <h2>🎯 Calculate Your SLA Downtime</h2>
+
+            <div class="input-group">
+                <label for="uptimePercent">Uptime Percentage (%)</label>
+                <input type="number" id="uptimePercent" min="90" max="100" step="0.001" value="99.9" placeholder="99.9">
+            </div>
+
+            <div class="sla-buttons">
+                <button class="sla-btn" onclick="setSLA(99)">99%</button>
+                <button class="sla-btn active" onclick="setSLA(99.9)">99.9%</button>
+                <button class="sla-btn" onclick="setSLA(99.99)">99.99%</button>
+                <button class="sla-btn" onclick="setSLA(99.999)">99.999%</button>
+                <button class="sla-btn" onclick="setSLA(99.9999)">99.9999%</button>
+            </div>
+
+            <div class="results-grid">
+                <div class="result-card">
+                    <div class="result-value" id="downPerYear">-</div>
+                    <div class="result-label">Downtime per Year</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-value" id="downPerMonth">-</div>
+                    <div class="result-label">Downtime per Month</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-value" id="downPerWeek">-</div>
+                    <div class="result-label">Downtime per Week</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-value" id="downPerDay">-</div>
+                    <div class="result-label">Downtime per Day</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="comparison-table">
+            <h2 style="padding: 20px; color: var(--dark);">📊 SLA Comparison Table</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>SLA %</th>
+                        <th>Per Day</th>
+                        <th>Per Week</th>
+                        <th>Per Month</th>
+                        <th>Per Year</th>
+                    </tr>
+                </thead>
+                <tbody id="comparisonBody"></tbody>
+            </table>
+        </div>
+
+        <div style="background: white; padding: 30px; border-radius: 15px; margin-top: 40px;">
+            <h2>💡 Understanding SLA "Nines"</h2>
+            <p style="margin: 15px 0;"><strong class="nines">99% ("Two Nines"):</strong> 3.65 days of downtime per year - Entry level</p>
+            <p style="margin: 15px 0;"><strong class="nines">99.9% ("Three Nines"):</strong> 8.76 hours per year - Standard business SLA</p>
+            <p style="margin: 15px 0;"><strong class="nines">99.99% ("Four Nines"):</strong> 52.56 minutes per year - High availability</p>
+            <p style="margin: 15px 0;"><strong class="nines">99.999% ("Five Nines"):</strong> 5.26 minutes per year - Mission critical</p>
+            <p style="margin: 15px 0;"><strong class="nines">99.9999% ("Six Nines"):</strong> 31.5 seconds per year - Extreme availability</p>
+        </div>
+    </div>
+
+    <footer>
+        <p><strong>Built by <a href="https://turtles-ai-lab.github.io/Turtles-AI-Lab/" target="_blank" style="color: var(--primary);">Turtles AI Lab</a></strong></p>
+        <p style="margin-top: 10px;"><a href="https://github.com/Turtles-AI-Lab/sla-uptime-calculator" style="color: var(--primary);">View on GitHub</a></p>
+    </footer>
+
+    <script>
+        const MINUTES_PER_YEAR = 525600;
+        const MINUTES_PER_MONTH = 43800;
+        const MINUTES_PER_WEEK = 10080;
+        const MINUTES_PER_DAY = 1440;
+
+        function formatTime(minutes) {
+            if (minutes < 1) {
+                return (minutes * 60).toFixed(1) + ' sec';
+            } else if (minutes < 60) {
+                return minutes.toFixed(2) + ' min';
+            } else if (minutes < 1440) {
+                return (minutes / 60).toFixed(2) + ' hrs';
+            } else {
+                return (minutes / 1440).toFixed(2) + ' days';
+            }
+        }
+
+        function calculate() {
+            const uptimePercent = parseFloat(document.getElementById('uptimePercent').value) || 99.9;
+            const downtimePercent = 100 - uptimePercent;
+
+            const downPerYear = (MINUTES_PER_YEAR * downtimePercent) / 100;
+            const downPerMonth = (MINUTES_PER_MONTH * downtimePercent) / 100;
+            const downPerWeek = (MINUTES_PER_WEEK * downtimePercent) / 100;
+            const downPerDay = (MINUTES_PER_DAY * downtimePercent) / 100;
+
+            document.getElementById('downPerYear').textContent = formatTime(downPerYear);
+            document.getElementById('downPerMonth').textContent = formatTime(downPerMonth);
+            document.getElementById('downPerWeek').textContent = formatTime(downPerWeek);
+            document.getElementById('downPerDay').textContent = formatTime(downPerDay);
+        }
+
+        function setSLA(percent) {
+            document.getElementById('uptimePercent').value = percent;
+            document.querySelectorAll('.sla-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            calculate();
+        }
+
+        function populateTable() {
+            const slas = [90, 95, 99, 99.5, 99.9, 99.95, 99.99, 99.999, 99.9999];
+            const tbody = document.getElementById('comparisonBody');
+            tbody.innerHTML = '';
+
+            slas.forEach(sla => {
+                const downtime = 100 - sla;
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td><strong>${sla}%</strong></td>
+                    <td>${formatTime((MINUTES_PER_DAY * downtime) / 100)}</td>
+                    <td>${formatTime((MINUTES_PER_WEEK * downtime) / 100)}</td>
+                    <td>${formatTime((MINUTES_PER_MONTH * downtime) / 100)}</td>
+                    <td>${formatTime((MINUTES_PER_YEAR * downtime) / 100)}</td>
+                `;
+            });
+        }
+
+        document.getElementById('uptimePercent').addEventListener('input', calculate);
+        document.addEventListener('DOMContentLoaded', () => {
+            calculate();
+            populateTable();
+        });
+    </script>
+</body>
+</html>
