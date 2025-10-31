@@ -1,5 +1,13 @@
 # ⏱️ SLA Uptime Calculator
 
+
+![GitHub stars](https://img.shields.io/github/stars/Turtles-AI-Lab/sla-uptime-calculator?style=social)
+![GitHub forks](https://img.shields.io/github/forks/Turtles-AI-Lab/sla-uptime-calculator?style=social)
+![GitHub issues](https://img.shields.io/github/issues/Turtles-AI-Lab/sla-uptime-calculator)
+![GitHub license](https://img.shields.io/github/license/Turtles-AI-Lab/sla-uptime-calculator)
+![GitHub last commit](https://img.shields.io/github/last-commit/Turtles-AI-Lab/sla-uptime-calculator)
+
+
 Calculate allowed downtime for different SLA (Service Level Agreement) percentages.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
